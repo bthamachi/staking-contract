@@ -2,16 +2,10 @@ import { Popover } from "@headlessui/react";
 import { useWalletContext } from "../context/Wallet";
 import WalletButton from "./WalletConnect";
 
-const navigation = [
-  { name: "Product", href: "#" },
-  { name: "Features", href: "#" },
-  { name: "Marketplace", href: "#" },
-  { name: "Company", href: "#" },
-];
-
 const Navbar = () => {
   const { updateUserAddress } = useWalletContext();
   if (typeof window != "undefined") {
+    //@ts-ignore
     window?.ethereum.on("accountsChanged", async function (accounts) {
       //Initialise Information
       updateUserAddress(accounts[0]);

@@ -1,34 +1,34 @@
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
+import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { useTokenContext } from "../context/TokenContext";
 import { useWalletContext } from "../context/Wallet";
+import { UserStake } from "../types/stake";
 import { getUserStakes } from "../utils/graph";
 import GenericHeader from "./GenericHeader";
-import UserStake from "./UserStake";
+import UserStakeComponent from "./UserStakeComponent";
 
 const UserStakingHistory = () => {
   const { address, isConnected, contractInterface } = useWalletContext();
   const { tokenDecimals, tokenLoading } = useTokenContext();
-  const [userStakes, setUserStakes] = useState([]);
+  const [userStakes, setUserStakes] = useState<UserStake[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isConnected || tokenLoading) {
       return;
     }
-    getUserStakes(address).then((res) => {
-      setUserStakes(
-        res.stakingVaults.map((item) => {
-          return {
-            stakingVaultAddr: item.stakingVault,
-            unlockTime: item.unlockTime,
-            redeemed: item.redeemed,
-            value: ethers.utils
-              .formatUnits(item.value, tokenDecimals)
-              .toString(),
-          };
-        })
-      );
+    getUserStakes(address).then(({ stakingVaults }) => {
+      const parsedUserStakes = stakingVaults.map((item) => {
+        return {
+          ...item,
+          value: ethers.utils.formatUnits(item.value, tokenDecimals).toString(),
+        };
+      });
+
+      setUserStakes(parsedUserStakes);
+      setLoading(false);
     });
   }, [address, tokenLoading]);
 
@@ -54,21 +54,23 @@ const UserStakingHistory = () => {
           Redeem Staked Coins
         </button>
       </div>
-      <ul
-        role="list"
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 px-4 py-10 mb-10"
-      >
-        {userStakes.map((item) => {
-          return (
-            <UserStake
-              stakingVaultAddr={item.stakingVaultAddr}
-              unlockTime={item.unlockTime}
-              redeemed={item.redeemed}
-              value={item.value}
-            />
-          );
-        })}
-      </ul>
+      {loading ? (
+        <div className="flex items-center justify-center my-10">
+          <p className="mr-4">Loading</p>
+          <ClipLoader />
+        </div>
+      ) : (
+        <ul
+          role="list"
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 px-4 py-10 mb-10"
+        >
+          {userStakes.map((stake) => {
+            return (
+              <UserStakeComponent stake={stake} key={stake.stakingVault} />
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 };

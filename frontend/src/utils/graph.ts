@@ -1,9 +1,8 @@
 import axios from "axios";
+import { getUserStakeReturnType } from "../types/stake";
 
 export async function subgraphQuery(query: string) {
   try {
-    // Replace YOUR-SUBGRAPH-URL with the url of your subgraph
-
     console.log(`Querying ${process.env.NEXT_PUBLIC_SUBGRAPH_URL}`);
     const response = await axios.post(process.env.NEXT_PUBLIC_SUBGRAPH_URL, {
       query,
@@ -20,7 +19,9 @@ export async function subgraphQuery(query: string) {
   }
 }
 
-export const getUserStakes = (address: string) => {
+export const getUserStakes = (
+  address: string
+): Promise<getUserStakeReturnType> => {
   const query = `
     {
         stakingVaults(where:{

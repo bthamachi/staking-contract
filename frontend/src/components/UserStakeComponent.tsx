@@ -1,30 +1,21 @@
 import { format, fromUnixTime } from "date-fns";
+import { UserStake } from "../types/stake";
 import { formatAddressToDisplay } from "../utils/chain";
 
 type UserStakeProps = {
-  stakingVaultAddr: string;
-  unlockTime: string;
-  redeemed: boolean;
-  value: number;
+  stake: UserStake;
 };
 
-const UserStake = ({
-  stakingVaultAddr,
-  unlockTime,
-  redeemed,
-  value,
-}: UserStakeProps) => {
+const UserStakeComponent = ({ stake }: UserStakeProps) => {
+  const { stakingVault, redeemed, unlockTime, value } = stake;
   return (
-    <li
-      key={stakingVaultAddr}
-      className="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow"
-    >
+    <li className="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow">
       <div className="flex w-full items-center justify-between space-x-6 p-6">
         <div className="flex-1 truncate">
           <div className="flex items-center  justify-between">
             <div className="flex flex-col">
               <h3 className="truncate text-sm font-medium text-gray-900">
-                Stake ({formatAddressToDisplay(stakingVaultAddr)})
+                Stake ({formatAddressToDisplay(stakingVault)})
               </h3>
 
               <p className="mt-1 truncate text-sm text-gray-500">
@@ -56,4 +47,4 @@ const UserStake = ({
   );
 };
 
-export default UserStake;
+export default UserStakeComponent;
