@@ -9,7 +9,7 @@ const CoinPurchaseForm = () => {
   const [tokenOrderSize, updateTokenOrderSize] = useState<string>("");
 
   const { tokenDecimals } = useTokenContext();
-  const { basePrice } = useSellerContext();
+  const { basePrice, updateSellerState } = useSellerContext();
   const { contractInterface } = useWalletContext();
 
   const purchaseToken = (e: React.FormEvent<HTMLFormElement>) => {
@@ -27,12 +27,19 @@ const CoinPurchaseForm = () => {
         .purchaseCoin(totalAmount, { value: totalCost })
         .then((_) => {
           toast.success(
-            `Succesfully purchased ${tokenOrder.toFixed(2)} tokens`
+            `Succesfully sent in an order to purchase ${tokenOrder.toFixed(
+              2
+            )} tokens`
           );
         })
         .catch((err) => {
           toast.error(err);
         });
+
+      contractInterface?.tokenSeller.on("CoinStaked", function (block) {
+        toast(`Succesfully Purchased ${tokenOrder.toFixed(2)} Tokens`);
+        updateSellerState();
+      });
     } catch {
       toast.warning("Invalid Token Amount. Please try a valid sum.");
     }

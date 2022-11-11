@@ -1,4 +1,5 @@
 import { Popover } from "@headlessui/react";
+import Link from "next/link";
 import { useWalletContext } from "../context/Wallet";
 import WalletButton from "./WalletConnect";
 
@@ -19,7 +20,14 @@ const Navbar = () => {
           className="relative mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6"
           aria-label="Global"
         >
-          <img className="h-20 w-auto" src="/Icon.png" alt="" />
+          <Link href="/">
+            <img
+              className="hover:mouse-cursor h-20 w-auto"
+              src="/Icon.png"
+              alt=""
+            />
+          </Link>
+
           <WalletButton />
         </nav>
       </div>

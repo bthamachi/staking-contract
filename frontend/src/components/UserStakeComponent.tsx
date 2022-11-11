@@ -19,7 +19,7 @@ const UserStakeComponent = ({ stake }: UserStakeProps) => {
               </h3>
 
               <p className="mt-1 truncate text-sm text-gray-500">
-                {value} HMC tokens
+                {parseFloat(value).toFixed(2)} HMC tokens
               </p>
             </div>
             {redeemed ? (

@@ -31,7 +31,7 @@ export function TokenWrapper({ children }) {
   useEffect(() => {
     const interval = setInterval(() => {
       updateTokenState();
-    }, 20000);
+    }, 5000);
     return () => {
       clearInterval(interval);
     };
@@ -41,7 +41,6 @@ export function TokenWrapper({ children }) {
     if (!isConnected) {
       return;
     }
-    console.log(".....Updating Token State");
     Promise.all([
       contractInterface?.taxableToken.decimals(),
       contractInterface?.taxableToken.balanceOf(address),

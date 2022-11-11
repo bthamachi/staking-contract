@@ -9,6 +9,7 @@ type SellerContextType = {
   tokenSellerLoading: boolean;
   userStakedAmount: number;
   userRedeemableAmount: number;
+  updateSellerState: () => void;
 };
 
 const SellerContext = createContext<SellerContextType>(null!);
@@ -32,7 +33,8 @@ export function SellerWrapper({ children }) {
   useEffect(() => {
     const interval = setInterval(() => {
       updateSellerState();
-    }, 20000);
+      updateUserState();
+    }, 5000);
     return () => {
       clearInterval(interval);
     };
@@ -42,7 +44,6 @@ export function SellerWrapper({ children }) {
     if (!isConnected) {
       return;
     }
-    console.log("....Update Seller State");
     Promise.all([
       contractInterface?.taxableToken.decimals(),
       contractInterface?.tokenSeller.basePrice(),
@@ -70,12 +71,10 @@ export function SellerWrapper({ children }) {
     });
   };
 
-  useEffect(() => {
-    // We need this to run everytime we have an update in the user's address
+  const updateUserState = () => {
     if (!address) {
       return;
     }
-
     Promise.all([
       contractInterface?.taxableToken.decimals(),
       contractInterface?.tokenSeller.getRedeemableAmount(),
@@ -92,6 +91,11 @@ export function SellerWrapper({ children }) {
       setUserRedeemableValue(parseFloat(parsedUserRedeemableValue));
       setUserStakedValue(parseFloat(parsedUserstakedValue));
     });
+  };
+
+  useEffect(() => {
+    // We need this to run everytime we have an update in the user's address
+    updateUserState();
   }, [address]);
 
   let sharedState = {
@@ -100,6 +104,7 @@ export function SellerWrapper({ children }) {
     protocolStakedValue,
     userRedeemableAmount,
     userStakedAmount,
+    updateSellerState,
   };
 
   return (

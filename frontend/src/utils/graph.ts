@@ -26,7 +26,7 @@ export const getUserStakes = (
     {
         stakingVaults(where:{
           user: "${address}"
-        },orderBy:id,orderDirection:desc){
+        },orderBy:unlockTime,orderDirection:desc){
           stakingVault
           unlockTime
           redeemed
