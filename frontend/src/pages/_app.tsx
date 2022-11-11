@@ -14,7 +14,18 @@ export default function App({ Component, pageProps }: AppProps) {
         <SellerWrapper>
           <div className="bg-gray-900 pb-10">
             <Navbar />
-            <ToastContainer />
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss={false}
+              draggable
+              pauseOnHover
+              theme="light"
+            />
             <Component {...pageProps} />
           </div>
         </SellerWrapper>

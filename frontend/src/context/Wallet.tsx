@@ -1,6 +1,7 @@
 import { providers } from "ethers";
 import { useRouter } from "next/router";
 import { createContext, useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import Web3Modal from "web3modal";
 import { getPolygonMumbaiSdk, PolygonMumbaiSdk } from "../contractTypes";
 
@@ -48,8 +49,16 @@ export function WalletWrapper({ children }) {
 
     const web3Provider = await new providers.Web3Provider(provider);
     const signer = web3Provider.getSigner();
+    const { chainId } = await web3Provider.getNetwork();
     const walletAddress = await signer.getAddress();
     const contracts = getPolygonMumbaiSdk(signer);
+
+    if (chainId !== 80001) {
+      toast.warning(
+        "This app only runs on Mumbai's Network. Please switch to Mumbai"
+      );
+      return;
+    }
 
     //Update State
     setSdk(contracts);
