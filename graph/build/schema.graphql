@@ -1,0 +1,10 @@
+type StakingVault @entity {
+  id: ID!
+  stakingVault : Bytes!
+  user:Bytes!
+  unlockTime:BigInt!
+  value:BigInt!
+  redeemed: Boolean!
+  redemptionTimestamp: BigInt
+}
+

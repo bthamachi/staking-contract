@@ -1,0 +1,36 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: TokenSeller
+    network: mumbai
+    source:
+      startBlock: 28992043
+      address: "0x0ddA3502cBf69de0623ec057Ae127270359FDc43"
+      abi: TokenSeller
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - CoinRedeemed
+        - CoinStaked
+        - OwnershipTransferred
+        - UserBlacklisted
+        - UserRemovedFromBlacklist
+      abis:
+        - name: TokenSeller
+          file: ./abis/TokenSeller.json
+      eventHandlers:
+        - event: CoinRedeemed(uint256,address,address,uint256,uint256)
+          handler: handleCoinRedeemed
+        - event: CoinStaked(uint256,address,address,uint256,uint256)
+          handler: handleCoinStaked
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: UserBlacklisted(address,uint256)
+          handler: handleUserBlacklisted
+        - event: UserRemovedFromBlacklist(address,uint256)
+          handler: handleUserRemovedFromBlacklist
+      file: ./src/token-seller.ts
