@@ -1,6 +1,6 @@
-import { format, fromUnixTime } from "date-fns";
 import { UserStake } from "../types/stake";
 import { formatAddressToDisplay } from "../utils/chain";
+import CountdownTimer from "./CountdownTimer";
 
 type UserStakeProps = {
   stake: UserStake;
@@ -27,20 +27,14 @@ const UserStakeComponent = ({ stake }: UserStakeProps) => {
                 Redeemed
               </span>
             ) : (
-              <span className="inline-block flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                Staked
-              </span>
+              <div className="flex flex-col items-center">
+                <CountdownTimer
+                  unlockTimestamp={parseInt(unlockTime)}
+                  redeemed={redeemed}
+                />
+              </div>
             )}
           </div>
-          {!redeemed ? (
-            <span className="w-full text-center mt-4 inline-block flex-shrink-0  px-2 py-0.5 text-xs font-medium text-black">
-              Unlocks at{" "}
-              {format(
-                fromUnixTime(parseInt(unlockTime)),
-                "MM/dd/yyyy hh:mm aa"
-              )}
-            </span>
-          ) : null}
         </div>
       </div>
     </li>

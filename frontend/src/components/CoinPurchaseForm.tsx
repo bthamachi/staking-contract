@@ -1,25 +1,37 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
+import { mutate } from "swr";
+import { useAccount } from "wagmi";
 import { useSellerContext } from "../context/SellerContext";
 import { useTokenContext } from "../context/TokenContext";
 import { useWalletContext } from "../context/Wallet";
+import { TOKEN_DECIMALS } from "../types/swr";
 import { calculateTokenAmount, calculateTokenOrder } from "../utils/seller";
 
 const CoinPurchaseForm = () => {
   const [tokenOrderSize, updateTokenOrderSize] = useState<string>("");
 
   const { tokenDecimals } = useTokenContext();
-  const { basePrice, updateSellerState } = useSellerContext();
+  const { basePrice, updateUserStakedAmount, updateUserRedeemableAmount } =
+    useSellerContext();
   const { contractInterface } = useWalletContext();
+  const { address } = useAccount();
 
   const purchaseToken = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (typeof basePrice == "undefined") {
+      toast.warning(
+        "Unable to process transaction for now. Please try again later."
+      );
+      return;
+    }
 
     try {
       const tokenOrder = parseFloat(tokenOrderSize);
       const totalCost = calculateTokenOrder(
         basePrice,
-        tokenDecimals,
+        TOKEN_DECIMALS,
         tokenOrder
       );
       const totalAmount = calculateTokenAmount(tokenDecimals, tokenOrder);
@@ -38,7 +50,9 @@ const CoinPurchaseForm = () => {
 
       contractInterface?.tokenSeller.on("CoinStaked", function (block) {
         toast(`Succesfully Purchased ${tokenOrder.toFixed(2)} Tokens`);
-        updateSellerState();
+        updateUserRedeemableAmount();
+        updateUserStakedAmount();
+        mutate([address]);
       });
     } catch {
       toast.warning("Invalid Token Amount. Please try a valid sum.");

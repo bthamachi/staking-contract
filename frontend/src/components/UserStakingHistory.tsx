@@ -1,39 +1,31 @@
-import { ethers } from "ethers";
 import { useEffect, useState } from "react";
-import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
-import { useTokenContext } from "../context/TokenContext";
+import useSWR, { mutate } from "swr";
+import { useAccount } from "wagmi";
 import { useWalletContext } from "../context/Wallet";
-import { UserStake } from "../types/stake";
 import { getUserStakes } from "../utils/graph";
 import GenericHeader from "./GenericHeader";
-import UserStakeComponent from "./UserStakeComponent";
+import UserStakes from "./UserStakes";
 
 const UserStakingHistory = () => {
-  const { address, isConnected, contractInterface } = useWalletContext();
-  const { tokenDecimals, tokenLoading, tokenTax } = useTokenContext();
-  const [userStakes, setUserStakes] = useState<UserStake[]>([]);
+  const { address } = useAccount();
+  const { contractInterface } = useWalletContext();
+
   const [loading, setLoading] = useState(true);
   const [onlyStaked, setOnlyStaked] = useState(false);
 
+  const {
+    data: userStakes,
+    error: userStakesError,
+    mutate: updateUserStakes,
+  } = useSWR([address], getUserStakes);
+
   useEffect(() => {
-    if (!isConnected || tokenLoading || !tokenTax) {
+    if (!contractInterface) {
       return;
     }
-    getUserStakes(address).then(({ stakingVaults }) => {
-      const parsedUserStakes = stakingVaults.map((item) => {
-        const parsedBigNumber = ethers.BigNumber.from(item.value);
-        const value = parsedBigNumber.mul(100 - tokenTax).div(100);
-        return {
-          ...item,
-          value: ethers.utils.formatUnits(value, tokenDecimals),
-        };
-      });
-
-      setUserStakes(parsedUserStakes);
-      setLoading(false);
-    });
-  }, [address, tokenLoading]);
+    updateUserStakes();
+  }, [contractInterface]);
 
   const redeemUserStakes = () => {
     contractInterface?.tokenSeller
@@ -44,11 +36,16 @@ const UserStakingHistory = () => {
       .catch((err) => {
         toast.warning(`Error Encountered of ${err}`);
       });
+
+    contractInterface?.tokenSeller.on("CoinRedeemed", function (block) {
+      updateUserStakes();
+      mutate([address]);
+    });
   };
 
   return (
     <div className="mt-10 bg-white shadow sm:rounded-lg px-10 py-5 sm:p-6">
-      <div className="flex items-center justify-between  w-100">
+      <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <GenericHeader text="Staking History" />
           <div className="relative flex items-start mt-4">
@@ -81,31 +78,11 @@ const UserStakingHistory = () => {
           Redeem Staked Coins
         </button>
       </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center my-10">
-          <p className="mr-4">Loading</p>
-          <ClipLoader />
-        </div>
-      ) : (
-        <ul
-          role="list"
-          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 px-4 py-10 mb-10"
-        >
-          {userStakes
-            .filter((stake) => {
-              if (onlyStaked) {
-                return !stake.redeemed;
-              }
-              return true;
-            })
-            .map((stake) => {
-              return (
-                <UserStakeComponent stake={stake} key={stake.stakingVault} />
-              );
-            })}
-        </ul>
-      )}
+      <UserStakes
+        userStakes={userStakes}
+        userStakesError={userStakesError}
+        onlyStaked={onlyStaked}
+      />
     </div>
   );
 };

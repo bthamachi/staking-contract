@@ -8,6 +8,7 @@ declare global {
       NEXT_PUBLIC_TAXABLE_TOKEN: `0x${string}`;
       NEXT_PUBLIC_TOKEN_SELLER: `0x${string}`;
       NEXT_PUBLIC_SUBGRAPH_URL: string;
+      NEXT_PUBLIC_ALCHEMY_ID: string;
     }
   }
 }

@@ -1,77 +1,91 @@
 // src/context/state.js
 import { ethers } from "ethers";
-import { createContext, useContext, useEffect, useState } from "react";
-import { formatBNToNumber } from "../utils/chain";
+import { createContext, useContext, useEffect } from "react";
+import useSWR from "swr";
+import { useAccount } from "wagmi";
+import {
+  PROTOCOL_TOTAL_STAKED,
+  TOKEN_DECIMALS,
+  TOKEN_TAX,
+  USER_TOKEN_BALANCE,
+} from "../types/swr";
 import { useWalletContext } from "./Wallet";
 
 type tokenContextType = {
-  userBalance: number;
+  userBalance: number | undefined;
+  protocolStakedValue: number | undefined;
   tokenDecimals: number;
   tokenTax: number;
-  tokenLoading: boolean;
-  getBalance: (address: string) => Promise<number>;
+  protocolStakedValueLoading: boolean;
+  userbalanceValueLoading: boolean;
+};
+
+type tokenMetadata = {
+  tax: number;
+  decimals: number;
 };
 
 const TokenContext = createContext<tokenContextType>(null!);
 
 //@ts-ignore
 export function TokenWrapper({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [tokenDecimals, setTokenDecimals] = useState<number>(18);
-  const [tokenTax, setTokenTax] = useState<number>(0);
-  const [userBalance, setUserBalance] = useState<number>(0);
+  const { contractInterface } = useWalletContext();
+  const { address, isConnected } = useAccount();
 
-  const { contractInterface, address, isConnected } = useWalletContext();
-
-  // Initial Load + Everytime address changes
-  useEffect(() => {
-    updateTokenState();
-  }, [isConnected, address]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateTokenState();
-    }, 5000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
-  const updateTokenState = () => {
-    if (!isConnected) {
+  const getUserBalance = () => {
+    if (!isConnected || !address) {
       return;
     }
-    Promise.all([
-      contractInterface?.taxableToken.decimals(),
-      contractInterface?.taxableToken.balanceOf(address),
-      contractInterface?.taxableToken.tax(),
-    ]).then(([decimals, userBalance, tokenTax]) => {
-      if (loading) {
-        setLoading(false);
-      }
-      const parsedUserBalance = parseFloat(
-        ethers.utils.formatUnits(userBalance!, decimals)
-      );
-      setTokenDecimals(decimals!);
-      setUserBalance(parsedUserBalance);
-      setTokenTax(tokenTax!);
+
+    return contractInterface?.taxableToken.balanceOf(address).then((res) => {
+      const userBalanceAsString = ethers.utils.formatUnits(res, TOKEN_DECIMALS);
+      return parseFloat(userBalanceAsString);
     });
   };
 
-  const getBalance = async (address: string) => {
-    if (loading) {
-      throw new Error("Awaiting details from contract");
+  const getProtocolBalance = () => {
+    if (!isConnected || !address) {
+      return;
     }
-    const balance = await contractInterface?.taxableToken.balanceOf(address);
-    return formatBNToNumber(balance!);
+
+    return contractInterface?.taxableToken
+      .balanceOf(process.env.NEXT_PUBLIC_TOKEN_SELLER)
+      .then((res) => {
+        const protocolBalanceAsString = ethers.utils.formatUnits(
+          res,
+          TOKEN_DECIMALS
+        );
+        return parseFloat(protocolBalanceAsString);
+      });
   };
 
+  const {
+    data: userBalance,
+    error: userBalanceError,
+    mutate: updateUserBalance,
+  } = useSWR(USER_TOKEN_BALANCE, getUserBalance);
+
+  const {
+    data: protocolBalance,
+    error: protocolBalanceError,
+    mutate: updateProtocolBalance,
+  } = useSWR(PROTOCOL_TOTAL_STAKED, getProtocolBalance);
+
+  useEffect(() => {
+    if (!contractInterface) {
+      return;
+    }
+    updateUserBalance();
+    updateProtocolBalance();
+  }, [contractInterface]);
+
   let sharedState = {
-    tokenLoading: loading,
-    userBalance,
-    tokenTax,
-    tokenDecimals,
-    getBalance,
+    tokenDecimals: TOKEN_DECIMALS,
+    tokenTax: TOKEN_TAX,
+    protocolStakedValue: protocolBalance,
+    userBalance: userBalance,
+    protocolStakedValueLoading: !protocolBalance && !protocolBalanceError,
+    userbalanceValueLoading: userBalance == null && !userBalanceError,
   };
 
   return (

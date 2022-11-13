@@ -1,110 +1,121 @@
 // src/context/state.js
 import { ethers } from "ethers";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
+import useSWR from "swr";
+import { useAccount } from "wagmi";
+import {
+  CONTRACT_BASE_PRICE,
+  CONTRACT_REDEEM_VALUE,
+  CONTRACT_STAKED_VALUE,
+  TOKEN_DECIMALS,
+} from "../types/swr";
 import { useWalletContext } from "./Wallet";
 
 type SellerContextType = {
-  protocolStakedValue: number;
-  basePrice: number;
-  tokenSellerLoading: boolean;
-  userStakedAmount: number;
-  userRedeemableAmount: number;
-  updateSellerState: () => void;
+  basePrice: number | undefined;
+  userRedeemableAmount: number | undefined;
+  userStakedAmount: number | undefined;
+  basePriceLoading: boolean;
+  userRedeemableAmountLoading: boolean;
+  userStakedAmountLoading: boolean;
+  userRedeemableAmountError: any;
+  basePriceError: any;
+  userStakedAmountError: any;
+  updateUserStakedAmount: () => void;
+  updateUserRedeemableAmount: () => void;
 };
 
 const SellerContext = createContext<SellerContextType>(null!);
 
 //@ts-ignore
 export function SellerWrapper({ children }) {
-  const [loading, setLoading] = useState(true);
+  const { address, isConnected } = useAccount();
+  const { contractInterface } = useWalletContext();
 
-  // This is the per-token price, calculated in Wei
-  const [basePrice, setBasePrice] = useState<number>(0);
-  const [protocolStakedValue, setProtocolStakedValue] = useState<number>(0);
-  const [userRedeemableAmount, setUserRedeemableValue] = useState<number>(0);
-  const [userStakedAmount, setUserStakedValue] = useState<number>(0);
-
-  const { contractInterface, address, isConnected } = useWalletContext();
-
-  useEffect(() => {
-    updateSellerState();
-  }, [address, isConnected]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateSellerState();
-      updateUserState();
-    }, 5000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
-  const updateSellerState = () => {
-    if (!isConnected) {
+  const getUserStakedAmount = () => {
+    if (!address || !isConnected) {
       return;
     }
-    Promise.all([
-      contractInterface?.taxableToken.decimals(),
-      contractInterface?.tokenSeller.basePrice(),
-      contractInterface?.taxableToken.balanceOf(
-        contractInterface.tokenSeller.address
-      ),
-    ]).then(([decimals, basePriceRaw, stakedValue]) => {
-      // Base Price is ~10 so not gonna break
-      setBasePrice(basePriceRaw?.toNumber()!);
-      // debugger;
-      try {
-        const parsedProtocolStakedValue = ethers.utils.formatUnits(
-          stakedValue!,
-          decimals!
-        );
 
-        setProtocolStakedValue(parseFloat(parsedProtocolStakedValue));
-        if (loading) {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.log(error);
-        debugger;
-      }
+    if (!contractInterface) {
+      return;
+    }
+
+    return contractInterface.tokenSeller.getStakedAmount().then((res) => {
+      return parseFloat(ethers.utils.formatUnits(res, TOKEN_DECIMALS));
     });
   };
 
-  const updateUserState = () => {
-    if (!address) {
+  const getUserRedeemableAmount = () => {
+    if (!address || !isConnected) {
       return;
     }
-    Promise.all([
-      contractInterface?.taxableToken.decimals(),
-      contractInterface?.tokenSeller.getRedeemableAmount(),
-      contractInterface?.tokenSeller.getStakedAmount(),
-    ]).then(([decimals, userRedeemableValue, userStakedValue]) => {
-      const parsedUserRedeemableValue = ethers.utils.formatUnits(
-        userRedeemableValue!,
-        decimals
-      );
-      const parsedUserstakedValue = ethers.utils.formatUnits(
-        userStakedValue!,
-        decimals
-      );
-      setUserRedeemableValue(parseFloat(parsedUserRedeemableValue));
-      setUserStakedValue(parseFloat(parsedUserstakedValue));
+
+    if (!contractInterface) {
+      return;
+    }
+
+    return contractInterface.tokenSeller.getRedeemableAmount().then((res) => {
+      return parseFloat(ethers.utils.formatUnits(res, TOKEN_DECIMALS));
     });
   };
 
+  const getBasePrice = () => {
+    if (!address || !isConnected) {
+      return;
+    }
+
+    if (!contractInterface) {
+      return;
+    }
+
+    // Base Price is ~10 so will not throw an error
+    return contractInterface.tokenSeller.basePrice().then((res) => {
+      return res.toNumber();
+    });
+  };
+
+  const {
+    data: basePrice,
+    error: basePriceError,
+    mutate: updateBasePrice,
+  } = useSWR(CONTRACT_BASE_PRICE, getBasePrice);
+  const {
+    data: userStakedAmount,
+    error: userStakedAmountError,
+    mutate: updateUserStakedAmount,
+  } = useSWR(CONTRACT_STAKED_VALUE, getUserStakedAmount);
+
+  const {
+    data: userRedeemableAmount,
+    error: userRedeemableAmountError,
+    mutate: updateUserRedeemableAmount,
+  } = useSWR(CONTRACT_REDEEM_VALUE, getUserRedeemableAmount);
+
   useEffect(() => {
-    // We need this to run everytime we have an update in the user's address
-    updateUserState();
-  }, [address]);
+    if (!contractInterface) {
+      return;
+    }
+
+    updateUserRedeemableAmount();
+    updateUserStakedAmount();
+    updateBasePrice();
+  }, [contractInterface]);
 
   let sharedState = {
-    tokenSellerLoading: loading,
     basePrice: basePrice,
-    protocolStakedValue,
-    userRedeemableAmount,
-    userStakedAmount,
-    updateSellerState,
+    userRedeemableAmount: userRedeemableAmount,
+    userStakedAmount: userStakedAmount,
+    basePriceLoading: !basePrice && !basePriceError,
+    userRedeemableAmountLoading:
+      userRedeemableAmount == null && !userRedeemableAmountError,
+    userStakedAmountLoading: userStakedAmount == null && !userStakedAmountError,
+    basePriceError,
+    userRedeemableAmountError,
+    userStakedAmountError,
+
+    updateUserStakedAmount,
+    updateUserRedeemableAmount,
   };
 
   return (

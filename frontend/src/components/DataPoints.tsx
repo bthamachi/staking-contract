@@ -6,10 +6,15 @@ const DataPoints = () => {
   const {
     userRedeemableAmount,
     userStakedAmount,
-    protocolStakedValue,
-    tokenSellerLoading,
+    userStakedAmountLoading,
+    userRedeemableAmountLoading,
   } = useSellerContext();
-  const { userBalance, tokenLoading } = useTokenContext();
+  const {
+    userBalance,
+    protocolStakedValueLoading,
+    userbalanceValueLoading,
+    protocolStakedValue,
+  } = useTokenContext();
 
   return (
     <div>
@@ -18,24 +23,25 @@ const DataPoints = () => {
       </h3>
       <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
         <DataBox
-          loading={tokenSellerLoading}
+          loading={protocolStakedValueLoading}
           name="Protocol Staked Value"
-          stat={protocolStakedValue.toString()}
+          stat={protocolStakedValue}
         />
+
         <DataBox
-          loading={tokenSellerLoading}
+          loading={userStakedAmountLoading}
           name="User Staked Value"
-          stat={userStakedAmount.toString()}
+          stat={userStakedAmount}
         />
         <DataBox
-          loading={tokenSellerLoading}
+          loading={userRedeemableAmountLoading}
           name="User Redeemable Value"
-          stat={userRedeemableAmount.toString()}
+          stat={userRedeemableAmount}
         />
         <DataBox
-          loading={tokenLoading}
+          loading={userbalanceValueLoading}
           name="User Token Balance"
-          stat={userBalance.toString()}
+          stat={userBalance}
         />
       </dl>
     </div>

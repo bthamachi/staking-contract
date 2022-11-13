@@ -1,18 +1,8 @@
 import { Popover } from "@headlessui/react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
-import { useWalletContext } from "../context/Wallet";
-import WalletButton from "./WalletConnect";
 
 const Navbar = () => {
-  const { updateUserAddress } = useWalletContext();
-  if (typeof window != "undefined") {
-    //@ts-ignore
-    window?.ethereum.on("accountsChanged", async function (accounts) {
-      //Initialise Information
-      updateUserAddress(accounts[0]);
-    });
-  }
-
   return (
     <Popover as="header" className="relative">
       <div className="bg-gray-900 pt-2">
@@ -27,8 +17,7 @@ const Navbar = () => {
               alt=""
             />
           </Link>
-
-          <WalletButton />
+          <ConnectButton />
         </nav>
       </div>
     </Popover>

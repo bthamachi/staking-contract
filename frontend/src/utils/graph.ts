@@ -1,5 +1,7 @@
 import axios from "axios";
-import { getUserStakeReturnType } from "../types/stake";
+import { ethers } from "ethers";
+import { getUserStakeReturnType, UserStake } from "../types/stake";
+import { TOKEN_DECIMALS, TOKEN_TAX } from "../types/swr";
 
 export async function subgraphQuery(query: string) {
   try {
@@ -20,8 +22,14 @@ export async function subgraphQuery(query: string) {
 }
 
 export const getUserStakes = (
-  address: string
-): Promise<getUserStakeReturnType> => {
+  address: string | undefined
+): Promise<UserStake[]> => {
+  console.log(`Inside here we initially get the value as ${address}`);
+  if (!address) {
+    return new Promise((resolve) => {
+      return [];
+    });
+  }
   const query = `
     {
         stakingVaults(where:{
@@ -34,5 +42,17 @@ export const getUserStakes = (
         }
       }
     `;
-  return subgraphQuery(query);
+
+  return subgraphQuery(query).then(
+    ({ stakingVaults }: getUserStakeReturnType) => {
+      return stakingVaults.map((item) => {
+        const parsedBigNumber = ethers.BigNumber.from(item.value);
+        const value = parsedBigNumber.mul(100 - TOKEN_TAX).div(100);
+        return {
+          ...item,
+          value: ethers.utils.formatUnits(value, TOKEN_DECIMALS),
+        };
+      });
+    }
+  );
 };
