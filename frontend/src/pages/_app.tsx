@@ -15,7 +15,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <WalletWrapper>
         <TokenWrapper>
           <SellerWrapper>
-            <div className="bg-gray-900 h-full pb-10 md:pb-20">
+            <div className="bg-gray-900 pb-10 md:pb-20">
               <Navbar />
               <ToastContainer
                 position="top-right"
